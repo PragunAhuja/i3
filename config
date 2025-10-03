@@ -15,7 +15,7 @@ exec --no-startup-id nitrogen --restore
 
 
 set $mod Mod4
-# Launch Apps 
+# Launch Apps
 bindsym $mod+space exec "flatpak run app.zen_browser.zen"
 bindsym $mod+a exec "rofi -show drun"
 bindsym $mod+c exec "code"
@@ -25,13 +25,13 @@ bindsym $mod+Escape exec "i3lock"
 ## EXEC ON RUN
 # Blueman Bluetooth Applet
 exec_always --no-startup-id blueman-applet
-#Automatic Tiling
+# Automatic Tiling
 exec_always --no-startup-id autotiling
-#Picom
+# Picom
 #exec --no-startup-id picom --config ~/.config/picom.conf -b
 
 
-#SCREENSHOT
+# SCREENSHOT
 bindsym PrintScreen exec scrot --select '~/Pictures/%Y-%m-%d-%T-screenshot.png'
 bindsym Shift+PrintScreen exec scrot '~/Pictures/%Y-%m-%d-%T-screenshot.png'
 
@@ -72,7 +72,7 @@ bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOU
 
 # Use Mouse+$mod to drag floating windows to their wanted position
 floating_modifier $mod
-#Brightness
+# Brightness
 # XF86 brightness keys (for keyboards with dedicated brightness keys)
 bindsym XF86MonBrightnessUp exec --no-startup-id brightnessctl set +10%
 bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 10%-
@@ -135,7 +135,7 @@ bindsym $mod+f fullscreen toggle
 # change container layout (stacked, tabbed, toggle split)
 bindsym $mod+s layout stacking
 bindsym $mod+w layout tabbed
-#bindsym $mod+t layout toggle split
+#bindsym $mod+t layout toggle split  # Preserved for reference in case toggle split is needed in the future
 
 # toggle tiling / floating
 bindsym $mod+Shift+space floating toggle
@@ -143,6 +143,7 @@ bindsym $mod+Shift+space floating toggle
 # focus the parent container
 
 # focus the child container
+# The following line is kept as a reference in case you want to enable focusing the child container in the future.
 #bindsym $mod+d focus child
 
 # Define names for default workspaces for which we configure key bindings later on.
