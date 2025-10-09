@@ -33,8 +33,7 @@ exec_always --no-startup-id autotiling
 
 
 # SCREENSHOT
-bindsym PrintScreen exec scrot --select '~/Pictures/%Y-%m-%d-%T-screenshot.png'
-bindsym Shift+PrintScreen exec scrot '~/Pictures/%Y-%m-%d-%T-screenshot.png'
+bindsym Print exec --no-startup-id "maim -s | tee /home/pragun/Pictures/Screenshots/$(date +%F-%H:%M:%S).png | xclip -selection clipboard -t image/png"
 
 
 
