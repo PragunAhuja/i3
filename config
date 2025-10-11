@@ -51,7 +51,11 @@ font pango:JetBrainsMono Nerd Font 14
 
 # Start XDG autostart .desktop files using dex. See also
 # https://wiki.archlinux.org/index.php/XDG_Autostart
-exec --no-startup-id dex --autostart --environment i3
+# Original: start XDG autostart .desktop files
+# Disabled original dex autostart line and run dex with IBUS_ENABLE_SYSTRAY=0
+# so that ibus won't create a system tray icon (prevents EN showing in tray)
+# exec --no-startup-id dex --autostart --environment i3
+exec --no-startup-id env IBUS_ENABLE_SYSTRAY=0 dex --autostart --environment i3
 
 # The combination of xss-lock, nm-applet and pactl is a popular choice, so
 # they are included here as an example. Modify as you see fit.
