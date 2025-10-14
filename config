@@ -87,7 +87,8 @@ bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOU
 
 # Use Mouse+$mod to drag floating windows to their wanted position
 floating_modifier $mod
-# Brightness
+
+# Brightness Controls
 # XF86 brightness keys (for keyboards with dedicated brightness keys)
 bindsym XF86MonBrightnessUp exec --no-startup-id brightnessctl set +10%
 bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 10%-
@@ -99,6 +100,13 @@ bindsym F6 exec --no-startup-id brightnessctl set +10%
 # Alternative: xbacklight method (fallback)
 # bindsym F5 exec --no-startup-id xbacklight -dec 10
 # bindsym F6 exec --no-startup-id xbacklight -inc 10
+
+# Media Player Controls
+# Control media playback with keyboard media keys (system-wide)
+bindsym XF86AudioPlay exec --no-startup-id playerctl play-pause
+bindsym XF86AudioPause exec --no-startup-id playerctl play-pause
+bindsym XF86AudioNext exec --no-startup-id playerctl next
+bindsym XF86AudioPrev exec --no-startup-id playerctl previous
 
 # start a terminal
 bindsym $mod+t exec alacritty
