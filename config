@@ -4,8 +4,11 @@
 # Should you change your keyboard layout some time, delete
 # this file and re-run i3-config-wizard(1).
 #
+ 
+#BORDERS
 
-
+default_border pixel 4
+default_floating_border pixel 4
 # i3 config file (v4)
 #
 # Please see https://i3wm.org/docs/userguide.html for a complete reference!
