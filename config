@@ -26,6 +26,7 @@ bindsym $mod+space exec "flatpak run app.zen_browser.zen"
 bindsym $mod+a exec "rofi -show drun"
 bindsym $mod+c exec "code"
 bindsym $mod+e exec "nautilus"
+bindsym $mod+bracketleft exec "ticktick"
 bindsym $mod+Escape exec "i3lock"
 
 gaps inner 8
