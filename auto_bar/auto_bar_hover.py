@@ -6,6 +6,7 @@ Modern Features:
 - Bar stays open while hovering (dual-threshold system)
 - Auto-detects bar height for optimal hide threshold
 - Show: ≤5px from top | Hide: >(bar_height + 5px)
+- Bulletproof i3 connection with socket check
 
 Modes:
 - Hover: Overlay mode (no window resize)
@@ -17,6 +18,7 @@ Resource Usage: <0.5% CPU, ~20MB RAM
 
 import json
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -37,6 +39,64 @@ def log(msg: str) -> None:
         sys.stderr.flush()
 
 
+def get_i3_socket() -> Optional[str]:
+    """Get i3 IPC socket path."""
+    try:
+        result = subprocess.run(
+            ["i3", "--get-socketpath"],
+            capture_output=True,
+            text=True,
+            timeout=1.0
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except Exception:
+        pass
+    return None
+
+
+def is_i3_socket_alive() -> bool:
+    """Check if i3 socket exists and is connectable."""
+    socket_path = get_i3_socket()
+    if not socket_path:
+        return False
+    
+    try:
+        # Try to connect to the socket
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock.settimeout(0.5)
+        sock.connect(socket_path)
+        sock.close()
+        return True
+    except Exception:
+        return False
+
+
+def wait_for_i3(timeout: int = 20) -> bool:
+    """Wait for i3 to be ready with timeout."""
+    log(f"Waiting for i3 socket (timeout={timeout}s)...")
+    start = time.time()
+    
+    while time.time() - start < timeout:
+        if is_i3_socket_alive():
+            # Socket exists, now verify IPC works
+            try:
+                result = subprocess.run(
+                    ["i3-msg", "-t", "get_version"],
+                    capture_output=True,
+                    timeout=1.0
+                )
+                if result.returncode == 0:
+                    log("✓ i3 is ready!")
+                    return True
+            except Exception:
+                pass
+        time.sleep(0.5)
+    
+    log(f"✗ i3 not ready after {timeout}s")
+    return False
+
+
 def i3_cmd(cmd: list[str], timeout: float = 1.0) -> bool:
     """Execute i3-msg command with error handling."""
     try:
@@ -47,8 +107,7 @@ def i3_cmd(cmd: list[str], timeout: float = 1.0) -> bool:
             timeout=timeout
         )
         return result.returncode == 0
-    except Exception as e:
-        log(f"i3-msg error: {e}")
+    except Exception:
         return False
 
 
@@ -173,6 +232,10 @@ def main() -> int:
         log("Another instance already running")
         return 0
     
+    # Wait for i3 to be ready
+    if not wait_for_i3(timeout=30):
+        log("⚠ Starting without i3 - will retry every 5s")
+    
     # Detect bar height and calculate hide threshold
     bar_height = get_bar_height()
     hide_threshold = bar_height + BAR_PADDING
@@ -184,13 +247,66 @@ def main() -> int:
     set_bar_overlay(False)
     bar_visible = False
     last_change = 0.0
+    last_i3_check = time.time()
+    i3_connected = is_i3_socket_alive()
+    
+    # Startup mode: check every 5s for first 2 minutes
+    startup_mode = not i3_connected
+    startup_end = time.time() + 120 if startup_mode else 0
+    check_interval = 5 if startup_mode else 60
+    
+    if startup_mode:
+        log("⏳ Startup mode: checking i3 every 5s")
     
     try:
         while True:
             try:
                 now = time.time()
                 
-                # Skip hover logic if bar in dock/invisible mode (Mod+b pressed)
+                # Exit startup mode after 2 minutes
+                if startup_mode and now > startup_end:
+                    startup_mode = False
+                    check_interval = 60
+                    if not i3_connected:
+                        log("⚠ Still no i3 connection, switching to 60s checks")
+                
+                # Periodically check i3 connection
+                if now - last_i3_check > check_interval:
+                    was_connected = i3_connected
+                    i3_connected = is_i3_socket_alive()
+                    
+                    if not was_connected and not i3_connected:
+                        # Try to connect
+                        if wait_for_i3(timeout=3):
+                            i3_connected = True
+                            log("✓ Connected to i3!")
+                            bar_height = get_bar_height()
+                            hide_threshold = bar_height + BAR_PADDING
+                            log(f"Initialized | Show: ≤{SHOW_THRESHOLD}px | Hide: >{hide_threshold}px")
+                            bar_visible = False
+                            startup_mode = False
+                            check_interval = 60
+                    elif not was_connected and i3_connected:
+                        log("✓ i3 connection detected!")
+                        bar_height = get_bar_height()
+                        hide_threshold = bar_height + BAR_PADDING
+                        log(f"Initialized | Show: ≤{SHOW_THRESHOLD}px | Hide: >{hide_threshold}px")
+                        startup_mode = False
+                        check_interval = 60
+                    elif was_connected and not i3_connected:
+                        log("⚠ i3 connection lost, entering startup mode")
+                        startup_mode = True
+                        check_interval = 5
+                        startup_end = now + 120
+                    
+                    last_i3_check = now
+                
+                # Skip hover logic if not connected
+                if not i3_connected:
+                    time.sleep(POLL_INTERVAL)
+                    continue
+                
+                # Skip hover logic if bar in dock/invisible mode
                 mode = get_bar_mode()
                 if mode in ("dock", "invisible"):
                     if bar_visible:
@@ -210,7 +326,7 @@ def main() -> int:
                         last_change = now
                         log(f"Bar shown (Y={y})")
                 
-                # Hide bar when mouse leaves bar area completely
+                # Hide bar when mouse leaves bar area
                 elif y > hide_threshold and bar_visible and (now - last_change) > DEBOUNCE:
                     if set_bar_overlay(False):
                         bar_visible = False

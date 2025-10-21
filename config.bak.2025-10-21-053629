@@ -76,9 +76,8 @@ exec --no-startup-id nm-applet
 
 # Auto-show/hide i3bar when mouse is at top of screen
 # Requires: python3-xlib (or xdotool as fallback)
-# SIMPLE SOLUTION: Just restart the systemd service from i3
-# This ensures it starts AFTER i3 is fully ready
-exec_always --no-startup-id systemctl --user restart auto-bar-hover.service
+# Managed by systemd user service: auto-bar-hover.service
+# (removed exec line - systemd handles startup and restarts)
 
 # Use pactl to adjust volume in PulseAudio.
 # Old i3status refresh (commented out)
@@ -272,6 +271,3 @@ bar {
 
 }
 
-# Auto-lock after inactivity using xautolock and i3lock-fancy
-# Change -time 5 to whatever minutes you prefer
-exec --no-startup-id xautolock -time 5 -locker "i3lock-fancy -p -- scrot -z" -detectsleep

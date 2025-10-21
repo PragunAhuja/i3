@@ -1,5 +1,19 @@
 # i3bar Auto-Hide Changelog
 
+## v3.1 - Fast Startup Fix (October 19, 2025)
+**Critical Fix:**
+- Fixed 30-90 second delay on boot/restart
+- Root cause: systemd 90-second timeout on i3 readiness check
+- Solution: Smart timeout (10s max) + internal script retry
+- ExecStartPre now succeeds even if i3 not ready, script waits internally
+- Added `TimeoutStartSec=15` to prevent long hangs
+
+**Technical Details:**
+- Service pre-check tries for 10 seconds, then exits successfully
+- Python script has internal `wait_for_i3()` with 30s timeout
+- Result: Service starts immediately, functionality works as soon as i3 ready
+- No more timeout failures in logs
+
 ## v3.0 - Modern Behavior (October 18, 2025)
 **Major Features:**
 - Dual-threshold system: Show at ≤5px, hide at >(bar_height + 5px)
@@ -58,15 +72,24 @@
 - Poll interval: 0.1s
 - Debounce: 0.08s
 - Bar padding: 5px
+- i3 ready timeout: 30s (internal)
+- Service start timeout: 15s
 
 ### Service Evolution
 - v1.0: Basic systemd service
 - v2.0: Added resource limits
 - v3.0: Added i3 readiness check, explicit python3 execution
+- v3.1: Smart timeout to prevent 90s boot delay
 
 ---
 
 ## Known Issues & Fixes
+
+### Issue: 30-90 Second Delay on Boot
+**Symptom:** Mouse hover doesn't work for 30-90 seconds after restart  
+**Root Cause:** systemd default timeout (90s) on i3 readiness check  
+**Fix:** Smart timeout (10s max) in ExecStartPre + internal script retry  
+**Status:** Fixed in v3.1
 
 ### Issue: Permission Denied on Restart
 **Symptom:** Service fails with "Permission denied" after file edits  
@@ -78,7 +101,7 @@
 **Symptom:** Service starts before i3 is ready  
 **Root Cause:** Race condition with i3 startup  
 **Fix:** Added `ExecStartPre` wait for i3 socket/version  
-**Status:** Fixed in v3.0
+**Status:** Fixed in v3.0, improved in v3.1
 
 ### Issue: Jitter in Dock Mode
 **Symptom:** Display flickers when mouse moves and bar is docked  
@@ -89,6 +112,14 @@
 ---
 
 ## Migration Guide
+
+### Upgrading from v3.0 to v3.1
+1. Update systemd service (adds TimeoutStartSec)
+2. Update auto_bar_hover.py (adds wait_for_i3 function)
+3. Reload: `systemctl --user daemon-reload`
+4. Restart: `systemctl --user restart auto-bar-hover`
+5. Verify: Service should start within 2-3 seconds
+6. Check: `journalctl --user -u auto-bar-hover -n 20` (no timeout errors)
 
 ### Upgrading from v2.0 to v3.0
 1. Update systemd service (automatic via file replacement)
@@ -106,6 +137,13 @@
 ---
 
 ## Troubleshooting Log
+
+### Slow Startup (RESOLVED in v3.1)
+- **Previous behavior:** 30-90 second delay before hover works
+- **Check logs:** `journalctl --user -u auto-bar-hover -n 50`
+- **Old symptom:** "start-pre operation timed out"
+- **New behavior:** Starts within 2-3 seconds
+- **Verification:** Look for "Waiting for i3 to be ready" → "i3 is ready" in logs
 
 ### Auto-Start Issues
 - **Check service status:** `systemctl --user status auto-bar-hover`
@@ -128,6 +166,7 @@
 - State file persistence (v1.0) - Replaced with stateless design in v2.0
 - Complex pinned/unpinned state management (v1.0) - Simplified to mode detection in v2.0
 - Separate v2 script file (v3.0) - Consolidated into single auto_bar_hover.py
+- Blocking i3 wait (v3.0) - Changed to smart timeout in v3.1
 
 ## Deprecated Files
 - `auto_bar_hover_v2.py` - Use `auto_bar_hover.py` instead
