@@ -4,11 +4,13 @@
 # Should you change your keyboard layout some time, delete
 # this file and re-run i3-config-wizard(1).
 #
- 
+# Auto-lock after 20 minutes of inactivity
+exec --no-startup-id xautolock -detectsleep -time 20 -locker "~/.config/i3/scripts/lock.sh"
+
 #BORDERS
 
-default_border pixel 4
-default_floating_border pixel 4
+default_border pixel 2
+default_floating_border pixel 2
 # i3 config file (v4)
 #
 # Please see https://i3wm.org/docs/userguide.html for a complete reference!
@@ -27,14 +29,14 @@ bindsym $mod+a exec --no-startup-id ~/.config/rofi/launchers/type-3/launcher.sh
 bindsym $mod+c exec "code"
 bindsym $mod+e exec "nautilus"
 bindsym $mod+bracketleft exec "ticktick"
-# i3lock-fancy with blur effect (default)
-bindsym $mod+Escape exec "i3lock-fancy -p -- scrot -z"
+# Manual lock with blur effect
+bindsym $mod+Escape exec "~/.config/i3/scripts/lock.sh"
 # Alternative i3lock-fancy options:
 # Greyscale lock screen: i3lock-fancy -g -p -- scrot -z
 # Minimize windows before lock: i3lock-fancy -d -p -- scrot -z
 
 gaps inner 8
-gaps outer 1
+gaps outer 0
 
 
 
@@ -66,9 +68,8 @@ exec --no-startup-id env IBUS_ENABLE_SYSTRAY=0 dex --autostart --environment i3
 # The combination of xss-lock, nm-applet and pactl is a popular choice, so
 # they are included here as an example. Modify as you see fit.
 
-# xss-lock grabs a logind suspend inhibit lock and will use i3lock-fancy to lock the
-# screen before suspend. Use loginctl lock-session to lock your screen.
-exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock-fancy -p -- scrot -z
+# xss-lock: lock screen before suspend/hibernate (e.g. when running systemctl suspend)
+exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/.config/i3/scripts/lock.sh
 
 # NetworkManager is the most popular way to manage wireless networks on Linux,
 # and nm-applet is a desktop environment-independent system tray GUI for it.
@@ -79,6 +80,9 @@ exec --no-startup-id nm-applet
 # SIMPLE SOLUTION: Just restart the systemd service from i3
 # This ensures it starts AFTER i3 is fully ready
 exec_always --no-startup-id systemctl --user restart auto-bar-hover.service
+
+# Auto-suspend monitor: suspends system 30s after any lock screen
+exec --no-startup-id ~/.config/i3/scripts/suspend-after-lock.sh
 
 # Use pactl to adjust volume in PulseAudio.
 # Old i3status refresh (commented out)
@@ -272,6 +276,3 @@ bar {
 
 }
 
-# Auto-lock after inactivity using xautolock and i3lock-fancy
-# Change -time 5 to whatever minutes you prefer
-exec --no-startup-id xautolock -time 5 -locker "i3lock-fancy -p -- scrot -z" -detectsleep
