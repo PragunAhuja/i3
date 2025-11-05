@@ -16,8 +16,9 @@ default_floating_border pixel 2
 # Please see https://i3wm.org/docs/userguide.html for a complete reference!
 
 set $mod Mod4
-# Restore Wall on startup
-exec --no-startup-id nitrogen --restore
+# Restore Wall on startup (with delay to ensure X is ready)
+exec --no-startup-id sleep 1 && nitrogen --restore
+exec_always --no-startup-id nitrogen --restore
 exec_always --no-startup-id picom --config ~/.config/i3/picom.conf -b
 exec_always --no-startup-id blueman-applet
 exec_always --no-startup-id autotiling

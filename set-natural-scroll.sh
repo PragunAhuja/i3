@@ -1,39 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Enable libinput "Natural Scrolling" for X11 devices and GNOME settings
+# Set natural scrolling for touchpad, traditional scrolling for mouse
 # Intended to run at i3 session start via: exec --no-startup-id ~/.config/i3/set-natural-scroll.sh
 
 XDG_SESSION_TYPE=${XDG_SESSION_TYPE:-}
 
-enable_xinput_natural() {
+configure_xinput_scroll() {
   command -v xinput >/dev/null 2>&1 || return 0
   xinput --list --name-only 2>/dev/null | while IFS= read -r dev; do
     [ -z "$dev" ] && continue
     if xinput list-props "$dev" 2>/dev/null | grep -q "Natural Scrolling Enabled"; then
-      cur=$(xinput list-props "$dev" 2>/dev/null | awk -F: '/Natural Scrolling Enabled/ {gsub(/[^0-9]/,"",$2); print $2; exit}')
-      [ -z "${cur:-}" ] && cur=$(xinput list-props "$dev" 2>/dev/null | awk '/Natural Scrolling Enabled/ {print $NF; exit}')
-      if [ "${cur:-}" = "0" ]; then
+      # Check if device is a touchpad (contains "touchpad" or "trackpad" in name, case insensitive)
+      if echo "$dev" | grep -iq "touchpad\|trackpad"; then
+        # Enable natural scrolling for touchpad
         xinput set-prop "$dev" "libinput Natural Scrolling Enabled" 1 2>/dev/null || true
+      else
+        # Disable natural scrolling for mouse/pointer
+        xinput set-prop "$dev" "libinput Natural Scrolling Enabled" 0 2>/dev/null || true
       fi
     fi
   done
 }
 
-enable_gnome_natural() {
+configure_gnome_scroll() {
   command -v gsettings >/dev/null 2>&1 || return 0
-  if gsettings get org.gnome.desktop.peripherals.touchpad natural-scroll 2>/dev/null | grep -q "false"; then
-    gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true 2>/dev/null || true
-  fi
-  if gsettings get org.gnome.desktop.peripherals.mouse natural-scroll 2>/dev/null | grep -q "false"; then
-    gsettings set org.gnome.desktop.peripherals.mouse natural-scroll true 2>/dev/null || true
-  fi
+  # Enable natural scroll for touchpad
+  gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true 2>/dev/null || true
+  # Disable natural scroll for mouse
+  gsettings set org.gnome.desktop.peripherals.mouse natural-scroll false 2>/dev/null || true
 }
 
 if [ "$XDG_SESSION_TYPE" = "x11" ]; then
-  enable_xinput_natural
+  configure_xinput_scroll
 fi
 
-enable_gnome_natural
+configure_gnome_scroll
 
 exit 0
